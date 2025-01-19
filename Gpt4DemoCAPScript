@@ -1,1 +1,83 @@
+# Load necessary libraries
+library(httr)
+library(jsonlite)
+
+# Define a function to load data
+load_data <- function(file_path) {
+  data <- read.csv(file_path)
+  return(data)
+}
+
+# Set your OpenAI API key
+api_key <- "OpenAI API key"
+
+# Define a function to send queries to OpenAI's ChatGPT
+query_openai <- function(question, context, api_key) {
+  url <- "https://api.openai.com/v1/chat/completions" # Use the correct endpoint
+  
+  # Construct the messages for ChatGPT
+  messages <- list(
+    list(role = "system", content = "You are a data analysis assistant."),
+    list(role = "user", content = paste(
+      "The dataset is as follows:", context,
+      "\nAnswer the following question based on this dataset:", question
+    ))
+  )
+  
+  # Set up the request body
+  body <- list(
+    model = "gpt-4",   # Use the ChatGPT model
+    messages = messages,
+    max_tokens = 10000,
+    temperature = 0
+  )
+  
+  # Make the API request
+  response <- POST(
+    url,
+    add_headers(
+      Authorization = paste("Bearer", api_key),
+      "Content-Type" = "application/json"
+    ),
+    body = toJSON(body, auto_unbox = TRUE)
+  )
+  
+  # Parse and return the response
+  content <- content(response, as = "parsed", type = "application/json")
+  
+  if (!is.null(content$error)) {
+    stop(paste("Error from OpenAI API:", content$error$message))
+  }
+  
+  return(content$choices[[1]]$message$content)
+}
+
+# Main script
+# Load the dataset
+data <- load_data("~/Git/GitHub_R/personalFiles/data.csv")
+
+# Generate context from the dataset (first few rows as JSON)
+context <- paste(capture.output(print(data)), collapse = "\n")
+
+# Ask a question
+question <- "How many variables are in the data set ?"
+answer <- query_openai(question, context, api_key)
+
+# Print the answer
+cat("Answer:", answer)
+
+# Ask a question
+question <- "How many rows are in the data set ?"
+answer <- query_openai(question, context, api_key)
+
+# Print the answer
+cat("Answer:", answer)
+
+# Ask a question
+question <- "How many songs have same acousticness as songid = 5uNZnElqOS3W4fRmRYPk4T in the data set ?"
+answer <- query_openai(question, context, api_key)
+
+# Print the answer
+cat("Answer:", answer)
+
 
